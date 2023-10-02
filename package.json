@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "description": "Real time EEG brain signals representations.",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
