@@ -27,8 +27,9 @@
       "@/*": ["./src/*"],
       "@assets/*": ["./src/assets/*"],
       "@styles/*": ["./src/styles/*"],
-      "@components/*": ["./components/*"],
-      "@three/*": ["./src/components/three/*"]
+      "@components/*": ["./src/components/*"],
+      "@three/*": ["./src/components/three/."],
+      "@utils/*": ["./src/utils/*"]
     }
   },
   "include": ["src"],

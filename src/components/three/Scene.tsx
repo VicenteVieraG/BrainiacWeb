@@ -1,13 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
     Scene as SCN,
     PerspectiveCamera,
     WebGLRenderer,
     BoxGeometry,
     Mesh,
-    MeshBasicMaterial
+    MeshBasicMaterial,
+    Object3D,
 } from "three";
-
+import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import type { FC } from "react";
 import type { Scene as TSCN, Camera, Renderer } from "three";
 
@@ -17,7 +18,19 @@ interface Props {
 
 const Scene: FC<Props> = ({children}): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const [assets, setAssets] = useState<Object3D[]>([]);
+
+    console.log(assets, "STATE");
     
+    useEffect(() => {
+        const fetchAssets = async () => {
+            const loadedAssets: Object3D[] = await loadAsset([".\\src\\assets\\models\\Mococo_pose.fbx"], {type: "fbx"});
+            setAssets(loadedAssets);
+        }
+        
+        fetchAssets();
+    }, []);
+
     useEffect(() => {
         // Initialize Scene basics.
         if(!containerRef.current) return;
@@ -31,10 +44,15 @@ const Scene: FC<Props> = ({children}): JSX.Element => {
         renderer.setSize(window.innerWidth, window.innerHeight);
         containerRef.current.appendChild(renderer.domElement);
 
-        const geometry: BoxGeometry = new BoxGeometry(1, 1, 1);
+        const geometry: BoxGeometry = new BoxGeometry(10, 10, -10);
         const material: MeshBasicMaterial = new MeshBasicMaterial({ color: 0x00ff00 });
         const cube: Mesh = new Mesh(geometry, material);
-        scene.add(cube);
+        // scene.add(cube);
+        
+        if(assets){
+            assets[0].scale.setScalar(.2);
+            scene.add(assets[0], cube);
+        } 
 
         camera.position.z = 5;
 
@@ -43,15 +61,18 @@ const Scene: FC<Props> = ({children}): JSX.Element => {
             requestAnimationFrame(animate);
             cube.rotation.x += 0.01;
             cube.rotation.y += 0.01;
+            assets[0].rotation.x += 0.01;
+            assets[0].rotation.y += 0.01;
+            assets[0].rotation.z += 0.01;
             renderer.render(scene, camera);
         }
         animate();
 
         return (): void => {
-            cancelAnimationFrame(animationFrameID); // Stop the animation
-            cube.geometry.dispose(); // Dispose of the box geometry
-            material.dispose(); // Dispose of the material
-            containerRef.current?.removeChild(renderer.domElement); // Remove the renderer from the DOM
+            cancelAnimationFrame(animationFrameID);
+            cube.geometry.dispose();
+            material.dispose();
+            containerRef.current?.removeChild(renderer.domElement);
         }
     }, []);
 
