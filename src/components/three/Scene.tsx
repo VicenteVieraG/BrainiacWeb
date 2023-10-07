@@ -19,7 +19,7 @@ interface Props {
 
 const ASSETS: string[] = [".\\src\\assets\\models\\Mococo_pose.fbx"];
 
-const Scene: FC<Props> = ({children}): JSX.Element => {
+const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [assets, setAssets] = useState<Object3D[] | null>(null);
 
