@@ -6,17 +6,16 @@ import {
     BoxGeometry,
     Mesh,
     MeshBasicMaterial,
-    Object3D,
-    Texture
+    Object3D
 } from "three";
-import { loadAsset, loadTextures } from "..\\..\\utils\\ObjectHandleler";
+import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 
 // ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
 import type { Scene as TSCN, Camera, Renderer } from "three";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
-import { ASSETS, TEXTURES } from "../../utils/resourceSrc";
+import { ASSETS } from "../../utils/resourceSrc";
 
 
 // ======================<-- INTERFACES -->======================================================
@@ -27,15 +26,12 @@ interface Props {
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [assets, setAssets] = useState<Object3D[] | null>(null);
-    const [textures, setTextures] = useState<Texture[]>([]);
     
     useEffect(() => {
         const fetchAssets = async() => {
             const loadedAssets: Object3D[] = await loadAsset(ASSETS, {type: "fbx"});
-            const loadedTextures: Texture[] = await loadTextures(TEXTURES);
 
             setAssets(loadedAssets);
-            setTextures(loadedTextures);
         }
         
         fetchAssets();
