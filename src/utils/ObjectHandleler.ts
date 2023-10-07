@@ -74,6 +74,13 @@ export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions)
     return Promise.all(loadedAssets);
 };
 
+/**
+ * @VicenteVieraG
+ * @description Loads textures to Three.js by passing an string array containing the path to the sources 
+ * @param texturePaths 
+ * @returns Returns a promise containing an array of loaded textures textures.
+ * @async
+ */
 export const loadTextures = async(texturePaths: string[]): Promise<Texture[]> => {
     const loader: TextureLoader = new TextureLoader;
 

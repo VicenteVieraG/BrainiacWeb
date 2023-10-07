@@ -10,30 +10,32 @@ import {
     Texture
 } from "three";
 import { loadAsset, loadTextures } from "..\\..\\utils\\ObjectHandleler";
+
+// ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
 import type { Scene as TSCN, Camera, Renderer } from "three";
 
+// ======================<-- VARIABLES IMPORT -->==========================================
+import { ASSETS, TEXTURES } from "../../utils/resourceSrc";
+
+
+// ======================<-- INTERFACES -->======================================================
 interface Props {
     children?: JSX.Element;
 }
 
-const ASSETS: string[] = [".\\src\\assets\\models\\Mococo_pose.fbx"];
-
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [assets, setAssets] = useState<Object3D[] | null>(null);
-
-    console.log("ASSETS: ", assets);
-    //const [textures, setTextures] = useState<Texture[]>([]);
+    const [textures, setTextures] = useState<Texture[]>([]);
     
     useEffect(() => {
         const fetchAssets = async() => {
             const loadedAssets: Object3D[] = await loadAsset(ASSETS, {type: "fbx"});
-            //const TEXTURES: string[] | null = await getFilePaths(".\\src\\assets\\textures\\mococo");
-            //const loadedTextures: Texture[] = await loadTextures(TEXTURES as string[]);
+            const loadedTextures: Texture[] = await loadTextures(TEXTURES);
 
             setAssets(loadedAssets);
-            //setTextures(loadedTextures);
+            setTextures(loadedTextures);
         }
         
         fetchAssets();
@@ -41,8 +43,8 @@ const Scene: FC<Props> = (): JSX.Element => {
 
     useEffect(() => {
         // Initialize Scene basics.
-        if(!containerRef.current) return;
-        if(!assets) return;
+        // Check for not null objects.
+        if(!(containerRef.current && assets)) return;
 
         let animationFrameID: number;
         
