@@ -7,8 +7,9 @@ import {
     Mesh,
     MeshBasicMaterial,
     Object3D,
+    Texture
 } from "three";
-import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
+import { loadAsset, loadTextures } from "..\\..\\utils\\ObjectHandleler";
 import type { FC } from "react";
 import type { Scene as TSCN, Camera, Renderer } from "three";
 
@@ -16,16 +17,23 @@ interface Props {
     children?: JSX.Element;
 }
 
+const ASSETS: string[] = [".\\src\\assets\\models\\Mococo_pose.fbx"];
+
 const Scene: FC<Props> = ({children}): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [assets, setAssets] = useState<Object3D[]>([]);
+    const [assets, setAssets] = useState<Object3D[] | null>(null);
 
-    console.log(assets, "STATE");
+    console.log("ASSETS: ", assets);
+    //const [textures, setTextures] = useState<Texture[]>([]);
     
     useEffect(() => {
-        const fetchAssets = async () => {
-            const loadedAssets: Object3D[] = await loadAsset([".\\src\\assets\\models\\Mococo_pose.fbx"], {type: "fbx"});
+        const fetchAssets = async() => {
+            const loadedAssets: Object3D[] = await loadAsset(ASSETS, {type: "fbx"});
+            //const TEXTURES: string[] | null = await getFilePaths(".\\src\\assets\\textures\\mococo");
+            //const loadedTextures: Texture[] = await loadTextures(TEXTURES as string[]);
+
             setAssets(loadedAssets);
+            //setTextures(loadedTextures);
         }
         
         fetchAssets();
@@ -34,6 +42,7 @@ const Scene: FC<Props> = ({children}): JSX.Element => {
     useEffect(() => {
         // Initialize Scene basics.
         if(!containerRef.current) return;
+        if(!assets) return;
 
         let animationFrameID: number;
         
@@ -47,12 +56,10 @@ const Scene: FC<Props> = ({children}): JSX.Element => {
         const geometry: BoxGeometry = new BoxGeometry(10, 10, -10);
         const material: MeshBasicMaterial = new MeshBasicMaterial({ color: 0x00ff00 });
         const cube: Mesh = new Mesh(geometry, material);
-        // scene.add(cube);
+        //scene.add(cube);
         
-        if(assets){
-            assets[0].scale.setScalar(.2);
-            scene.add(assets[0], cube);
-        } 
+        assets[0].scale.setScalar(.2);
+        scene.add(assets[0], cube);
 
         camera.position.z = 5;
 
@@ -74,7 +81,7 @@ const Scene: FC<Props> = ({children}): JSX.Element => {
             material.dispose();
             containerRef.current?.removeChild(renderer.domElement);
         }
-    }, []);
+    }, [assets]);
 
     return <div ref={containerRef}/>
 }

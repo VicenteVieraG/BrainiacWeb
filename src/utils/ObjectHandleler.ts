@@ -5,6 +5,7 @@ import { ColladaLoader } from "three/examples/jsm/loaders/ColladaLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
+import { Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
 
 interface LoadAssetOptions {
@@ -27,7 +28,7 @@ type Loader = OBJLoader
     | STLLoader
     | PLYLoader;
 
-export const loadAsset = async (assetPaths: string[], options?: LoadAssetOptions): Promise<Object3D[]> => {
+export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions): Promise<Object3D[]> => {
     const type = options?.type || "obj";
 
     const loadedAssets = assetPaths.map((path) => {
@@ -72,3 +73,15 @@ export const loadAsset = async (assetPaths: string[], options?: LoadAssetOptions
 
     return Promise.all(loadedAssets);
 };
+
+export const loadTextures = async(texturePaths: string[]): Promise<Texture[]> => {
+    const loader: TextureLoader = new TextureLoader;
+
+    const texturePromises: Promise<Texture>[] = texturePaths.map(texturePath => {
+        return new Promise<Texture>((resolve, reject) => {
+            loader.load(texturePath, texture => resolve(texture), undefined, error => reject(error));
+        });
+    });
+
+    return Promise.all(texturePromises);
+}
