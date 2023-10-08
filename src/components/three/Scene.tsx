@@ -18,10 +18,17 @@ import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 
 // ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
-import type { Scene as TSCN, Camera, WebGLRenderer as WGLR, DirectionalLight as DL } from "three";
+import type { 
+    Scene as TSCN,
+    Camera,
+    WebGLRenderer as WGLR,
+    DirectionalLight as DL
+} from "three";
+import type { Object } from "..\\..\\utils\\ObjectHandleler";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
-import { ASSETS } from "../../utils/resourceSrc";
+import { ASSETS } from "..\\..\\utils\\resourceSrc";
 
 
 // ======================<-- INTERFACES -->======================================================
@@ -31,13 +38,13 @@ interface Props {
 
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [assets, setAssets] = useState<Object3D[] | null>(null);
+    const [mococo, setAssets] = useState<GLTF[] | null>(null);
     
     useEffect(() => {
         const fetchAssets = async() => {
-            const loadedAssets: Object3D[] = await loadAsset(ASSETS, {type: "fbx"});
+            const loadedAssets: Object[] = await loadAsset(ASSETS, {type: "glb"});
 
-            setAssets(loadedAssets);
+            setAssets(loadedAssets as GLTF[]);
         }
         
         fetchAssets();
@@ -46,7 +53,7 @@ const Scene: FC<Props> = (): JSX.Element => {
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
-        if(!(containerRef.current && assets)) return;
+        if(!(containerRef.current && mococo)) return;
 
         let animationFrameID: number;
         
@@ -89,20 +96,21 @@ const Scene: FC<Props> = (): JSX.Element => {
         const meshStandardMaterial: MeshStandardMaterial = new MeshStandardMaterial(
                 {color: 0x86868A, metalness: 1}
             );
-        assets[0].traverse(child => {
+        mococo[0].scene.traverse(child => {
             if(child instanceof Mesh){
-                child.material = meshStandardMaterial;
+                //child.material = meshStandardMaterial;
                 child.castShadow = true;
             }
         });
 
         // Creating an skeleton.
-        const skeleton: SkeletonHelper = new SkeletonHelper(assets[0]);
+        const skeleton: SkeletonHelper = new SkeletonHelper(mococo[0].scene);
         skeleton.visible = true;
         
         // Add models to the scene.
-        assets[0].scale.setScalar(1);
-        scene.add(assets[0], skeleton, ilumination, dirLight, ground);
+        mococo[0].scene.scale.setScalar(4);
+        mococo[0].scene.position.y = 1;
+        scene.add(mococo[0].scene, skeleton, ilumination, dirLight, ground);
 
         // Camera setting.
         camera.position.set( 1, 2, - 3 );
@@ -111,7 +119,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Main animation loop.
         const animate = (): void => {
             requestAnimationFrame(animate);
-            assets[0].rotation.y += 0.01;
+            mococo[0].scene.rotation.y += 0.01;
             renderer.render(scene, camera);
         }
         animate();
@@ -120,7 +128,7 @@ const Scene: FC<Props> = (): JSX.Element => {
             cancelAnimationFrame(animationFrameID);
             containerRef.current?.removeChild(renderer.domElement);
         }
-    }, [assets]);
+    }, [mococo]);
 
     return <div ref={containerRef}/>
 }

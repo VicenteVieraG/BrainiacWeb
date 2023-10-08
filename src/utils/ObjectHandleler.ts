@@ -6,7 +6,15 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { PLYLoader } from "three/examples/jsm/loaders/PLYLoader.js";
 import { Texture, TextureLoader } from "three";
-import type { Object3D } from "three";
+import {
+    Object3DEventMap,
+    Object3D,
+    Group,
+    BufferGeometry,
+    NormalBufferAttributes
+} from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { Collada } from "three/examples/jsm/loaders/ColladaLoader.js";
 
 interface LoadAssetOptions {
     type?: ModelType;
@@ -29,7 +37,13 @@ type Loader = OBJLoader
     | STLLoader
     | PLYLoader;
 
-export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions): Promise<Object3D[]> => {
+export type Object = Group<Object3DEventMap>
+    | Object3D
+    | GLTF
+    | Collada
+    | BufferGeometry<NormalBufferAttributes>;
+
+export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions): Promise<Object[]> => {
     const type = options?.type || "obj";
 
     const loadedAssets = assetPaths.map((path) => {
@@ -43,6 +57,8 @@ export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions)
                 loader = new FBXLoader();
                 break;
             case "glb":
+                loader = new GLTFLoader();
+                break;
             case "gltf":
                 loader = new GLTFLoader();
                 break;
@@ -62,12 +78,15 @@ export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions)
                 throw new Error("Unsupported model type");
         }
 
-        return new Promise<Object3D>((resolve, reject) => {
-            loader.load(path, (object) => {
+        return new Promise<Object>((resolve, reject) => {
+            loader.load(path, (object): void => {
                 console.log("ASSERT: ", object);
-                resolve(object as Object3D);
-            }, undefined, (error) => {
+
+                if(type === "glb" || type === "gltf") resolve(object as GLTF);
+                resolve(object);
+            }, undefined, (error): void => {
                 console.log("ERROR: ", error)
+                
                 reject(error);
             });
         });
