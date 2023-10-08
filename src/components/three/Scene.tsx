@@ -9,7 +9,6 @@ import {
     PlaneGeometry,
     Object3D,
     SkeletonHelper,
-    MeshStandardMaterial,
     MeshPhongMaterial,
     HemisphereLight,
     DirectionalLight
@@ -29,6 +28,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
 import { ASSETS } from "..\\..\\utils\\resourceSrc";
+import { HENRIK } from "..\\..\\utils\\resourceSrc";
 
 
 // ======================<-- INTERFACES -->======================================================
@@ -39,12 +39,15 @@ interface Props {
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [mococo, setAssets] = useState<GLTF[] | null>(null);
+    const [brain, setBrain] = useState<Object3D | null>(null);
     
     useEffect(() => {
         const fetchAssets = async() => {
             const loadedAssets: Object[] = await loadAsset(ASSETS, {type: "glb"});
+            const loadedBrain: Object[] = await loadAsset(HENRIK);
 
             setAssets(loadedAssets as GLTF[]);
+            setBrain(loadedBrain[0] as Object3D);
         }
         
         fetchAssets();
@@ -53,7 +56,7 @@ const Scene: FC<Props> = (): JSX.Element => {
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
-        if(!(containerRef.current && mococo)) return;
+        if(!(containerRef.current && mococo && brain)) return;
 
         let animationFrameID: number;
         
@@ -69,7 +72,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         ilumination.position.set(0, 20, 0);
 
         const dirLight: DL = new DirectionalLight(0xffffff, 3);
-        dirLight.position.set( - 3, 10, - 10 );
+        dirLight.position.set(-3, 10, -10);
         dirLight.castShadow = true;
         dirLight.shadow.camera.top = 2;
         dirLight.shadow.camera.bottom = - 2;
@@ -93,15 +96,12 @@ const Scene: FC<Props> = (): JSX.Element => {
         containerRef.current.appendChild(renderer.domElement);
 
         // Setting the models properties.
-        const meshStandardMaterial: MeshStandardMaterial = new MeshStandardMaterial(
-                {color: 0x86868A, metalness: 1}
-            );
         mococo[0].scene.traverse(child => {
             if(child instanceof Mesh){
-                //child.material = meshStandardMaterial;
                 child.castShadow = true;
             }
         });
+        brain.scale.setScalar(.01);
 
         // Creating an skeleton.
         const skeleton: SkeletonHelper = new SkeletonHelper(mococo[0].scene);
@@ -110,7 +110,8 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Add models to the scene.
         mococo[0].scene.scale.setScalar(4);
         mococo[0].scene.position.y = 1;
-        scene.add(mococo[0].scene, skeleton, ilumination, dirLight, ground);
+        mococo[0].scene.position.z = -1;
+        scene.add(mococo[0].scene, brain, skeleton, ilumination, dirLight, ground);
 
         // Camera setting.
         camera.position.set( 1, 2, - 3 );
@@ -128,7 +129,7 @@ const Scene: FC<Props> = (): JSX.Element => {
             cancelAnimationFrame(animationFrameID);
             containerRef.current?.removeChild(renderer.domElement);
         }
-    }, [mococo]);
+    }, [mococo, brain]);
 
     return <div ref={containerRef}/>
 }
