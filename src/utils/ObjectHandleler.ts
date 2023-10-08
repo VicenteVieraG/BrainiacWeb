@@ -15,6 +15,7 @@ interface LoadAssetOptions {
 type ModelType = "obj"
     |"fbx"
     |"gltf"
+    |"glb"
     |"collada"
     |"draco"
     |"stl"
@@ -41,6 +42,7 @@ export const loadAsset = async(assetPaths: string[], options?: LoadAssetOptions)
             case "fbx":
                 loader = new FBXLoader();
                 break;
+            case "glb":
             case "gltf":
                 loader = new GLTFLoader();
                 break;
