@@ -10,8 +10,10 @@ import {
     Object3D,
     SkeletonHelper,
     MeshPhongMaterial,
+    MeshStandardMaterial,
     HemisphereLight,
-    DirectionalLight
+    DirectionalLight,
+    Vector3
 } from "three";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 
@@ -97,24 +99,34 @@ const Scene: FC<Props> = (): JSX.Element => {
 
         // Setting the models properties.
         mococo[0].scene.traverse(child => {
+            if(child instanceof Mesh) child.castShadow = true;
+        });
+        mococo[0].scene.scale.setScalar(4);
+        mococo[0].scene.position.y = 1;
+        mococo[0].scene.position.z = -1;
+
+        brain.traverse(child => {
             if(child instanceof Mesh){
                 child.castShadow = true;
+                child.material = new MeshStandardMaterial({
+                    color: new Color(0xB5C6DB),
+                    metalness: 1
+                });
             }
         });
         brain.scale.setScalar(.01);
+        brain.position.set(0, 1, 0);
+        brain.rotation.set(5, 0, 0);
 
         // Creating an skeleton.
         const skeleton: SkeletonHelper = new SkeletonHelper(mococo[0].scene);
         skeleton.visible = true;
         
         // Add models to the scene.
-        mococo[0].scene.scale.setScalar(4);
-        mococo[0].scene.position.y = 1;
-        mococo[0].scene.position.z = -1;
         scene.add(mococo[0].scene, brain, skeleton, ilumination, dirLight, ground);
 
         // Camera setting.
-        camera.position.set( 1, 2, - 3 );
+        camera.position.set( 1, 2, -3 );
         camera.lookAt( 0, 1, 0 );
 
         // Main animation loop.
