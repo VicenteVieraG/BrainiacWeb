@@ -12,8 +12,7 @@ import {
     MeshPhongMaterial,
     MeshStandardMaterial,
     HemisphereLight,
-    DirectionalLight,
-    Vector3
+    DirectionalLight
 } from "three";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 
@@ -42,7 +41,9 @@ const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [mococo, setAssets] = useState<GLTF[] | null>(null);
     const [brain, setBrain] = useState<Object3D | null>(null);
-    
+    const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [lastMousePosition, setLastMousePosition] = useState<{ x: number, y: number } | null>(null);
+  
     useEffect(() => {
         const fetchAssets = async() => {
             const loadedAssets: Object[] = await loadAsset(ASSETS, {type: "glb"});
@@ -54,12 +55,12 @@ const Scene: FC<Props> = (): JSX.Element => {
         
         fetchAssets();
     }, []);
-
+    
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
         if(!(containerRef.current && mococo && brain)) return;
-
+        
         let animationFrameID: number;
         
         // Set Scene parameters.
@@ -142,6 +143,47 @@ const Scene: FC<Props> = (): JSX.Element => {
             containerRef.current?.removeChild(renderer.domElement);
         }
     }, [mococo, brain]);
+
+    useEffect(() => {
+        const handleMouseDown = (event: MouseEvent): void => {
+            setIsDragging(true);
+            setLastMousePosition({ x: event.clientX, y: event.clientY });
+        };
+    
+        const handleMouseMove = (event: MouseEvent): void => {
+            if(!isDragging || !brain || !lastMousePosition) return;
+    
+            const deltaX: number = event.clientX - lastMousePosition.x;
+            const deltaY: number = event.clientY - lastMousePosition.y;
+    
+            brain.rotation.z += deltaX * 0.01;
+            brain.rotation.x += deltaY * -0.01;
+
+            setLastMousePosition({ x: event.clientX, y: event.clientY });
+        };
+    
+        const handleMouseUp = (): void => {
+            setIsDragging(false);
+            setLastMousePosition(null);
+        };
+    
+        // Add event listeners to the renderer's DOM element
+        const rendererElement = containerRef.current?.querySelector('canvas');
+        if (rendererElement) {
+            rendererElement.addEventListener('mousedown', handleMouseDown);
+            rendererElement.addEventListener('mousemove', handleMouseMove);
+            rendererElement.addEventListener('mouseup', handleMouseUp);
+        }
+    
+        // Cleanup event listeners on component unmount
+        return () => {
+            if (rendererElement) {
+                rendererElement.removeEventListener('mousedown', handleMouseDown);
+                rendererElement.removeEventListener('mousemove', handleMouseMove);
+                rendererElement.removeEventListener('mouseup', handleMouseUp);
+            }
+        };
+    }, [isDragging, brain, lastMousePosition]);
 
     return <div ref={containerRef}/>
 }
