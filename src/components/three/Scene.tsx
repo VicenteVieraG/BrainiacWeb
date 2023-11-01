@@ -44,6 +44,7 @@ const Scene: FC<Props> = (): JSX.Element => {
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [lastMousePosition, setLastMousePosition] = useState<{ x: number, y: number } | null>(null);
   
+// =======================<-- LOAD ASSETS -->=======================================================
     useEffect(() => {
         const fetchAssets = async() => {
             const loadedAssets: Object[] = await loadAsset(ASSETS, {type: "glb"});
@@ -55,7 +56,8 @@ const Scene: FC<Props> = (): JSX.Element => {
         
         fetchAssets();
     }, []);
-    
+
+// ==================<-- SETUP SCENE AND RENDER LOOP -->=============================================
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
@@ -111,7 +113,8 @@ const Scene: FC<Props> = (): JSX.Element => {
                 child.castShadow = true;
                 child.material = new MeshStandardMaterial({
                     color: new Color(0xB5C6DB),
-                    metalness: 1
+                    metalness: 1,
+                    roughness: .4
                 });
             }
         });

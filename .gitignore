@@ -24,4 +24,5 @@ dist-ssr
 *.sw?
 
 prompt.txt
+prompt.md
 public/models/Henrik.obj
