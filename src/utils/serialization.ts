@@ -54,9 +54,12 @@ const serializeFiber = (fibers: Fiber[], filePath: string): void => {
 }
 
 // Deserialization
-const deserializeFiber = (filePath: string): Fiber[] => {
+const deserializeFiber = async(URL: string): Promise<Fiber[]> => {
     // Read the content of the binary file and initialize offset to 0
-    const buffer: Buffer = fs.readFileSync(filePath);
+    const response: Response = await fetch(URL);
+    const arrayBuffer: ArrayBuffer = await response.arrayBuffer();
+    const buffer: Buffer = Buffer.from(arrayBuffer);
+    
     let offset: number = 0;
 
     // Read the total number of Fibers

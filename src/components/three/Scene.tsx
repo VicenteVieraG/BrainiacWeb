@@ -15,6 +15,7 @@ import {
     DirectionalLight
 } from "three";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
+import { deserializeFiber } from "..\\..\\utils\\serialization";
 
 // ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
@@ -26,6 +27,7 @@ import type {
 } from "three";
 import type { Object } from "..\\..\\utils\\ObjectHandleler";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { Fiber } from "..\\..\\utils\\serialization";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
 import { ASSETS } from "..\\..\\utils\\resourceSrc";
@@ -37,12 +39,19 @@ interface Props {
     children?: JSX.Element;
 }
 
+// ==========================<-- CONSTANTS -->==================================================
+const DATA_URL: string = "/Fibers.bin"; 
+
+// ==========================<-- MAIN COMPONENT -->=============================================
+
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [mococo, setAssets] = useState<GLTF[] | null>(null);
     const [brain, setBrain] = useState<Object3D | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [lastMousePosition, setLastMousePosition] = useState<{ x: number, y: number } | null>(null);
+    const [isRightDragging, setIsRightDragging] = useState<boolean>(false);
+    const [fibers, setFibers] = useState<Fiber[]>([]);
   
 // =======================<-- LOAD ASSETS -->=======================================================
     useEffect(() => {
@@ -57,7 +66,19 @@ const Scene: FC<Props> = (): JSX.Element => {
         fetchAssets();
     }, []);
 
+// ===========================<-- LOAD FIBERS DATA -->===============================================
+    useEffect(() => {
+        const fetchData = async() => {
+            const data: Fiber[] = await deserializeFiber(DATA_URL);
+
+            setFibers(data);
+        }
+
+        fetchData().catch(error => console.log(error)).finally((): void => console.log(fibers));
+    }, []);
+
 // ==================<-- SETUP SCENE AND RENDER LOOP -->=============================================
+    const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
@@ -68,30 +89,30 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Set Scene parameters.
         const scene: TSCN = new SCN;
         if(scene.background) scene.background = new Color(0xa0a0a0);
-        scene.fog = new Fog(0xa0a0a0, 10, 50);
-        const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 100);
+        scene.fog = new Fog(0xa0a0a0, 150, 50);
         const renderer: WGLR = new WebGLRenderer({antialias: true});
         
         // Ilumination
         const ilumination: HemisphereLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
-        ilumination.position.set(0, 20, 0);
+        ilumination.position.set(0, 1000, 0);
 
         const dirLight: DL = new DirectionalLight(0xffffff, 3);
-        dirLight.position.set(-3, 10, -10);
+        dirLight.position.set(0, 50, 0);
         dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 2;
-        dirLight.shadow.camera.bottom = - 2;
-        dirLight.shadow.camera.left = - 2;
-        dirLight.shadow.camera.right = 2;
+        dirLight.shadow.camera.top = 150;
+        dirLight.shadow.camera.bottom = -150;
+        dirLight.shadow.camera.left = -150;
+        dirLight.shadow.camera.right = 150;
         dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 40;
+        dirLight.shadow.camera.far = 150;
 
         // Creating the ground.
         const ground: Mesh = new Mesh(
-            new PlaneGeometry(100, 100),
+            new PlaneGeometry(4000, 4000),
             new MeshPhongMaterial({ color: 0xcbcbcb, depthWrite: false })
         );
         ground.rotation.x = - Math.PI / 2;
+        ground.position.setY(-50)
         ground.receiveShadow = true;
 
         // Rendering config and add it to the Scene main tag.
@@ -101,9 +122,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         containerRef.current.appendChild(renderer.domElement);
 
         // Setting the models properties.
-        mococo[0].scene.traverse(child => {
-            if(child instanceof Mesh) child.castShadow = true;
-        });
+        mococo[0].scene.traverse(child => (child instanceof Mesh)? child.castShadow = true : null);
         mococo[0].scene.scale.setScalar(4);
         mococo[0].scene.position.y = 1;
         mococo[0].scene.position.z = -1;
@@ -118,8 +137,7 @@ const Scene: FC<Props> = (): JSX.Element => {
                 });
             }
         });
-        brain.scale.setScalar(.01);
-        brain.position.set(0, 1, 0);
+        brain.position.set(0, 0, 0);
         brain.rotation.set(5, 0, 0);
 
         // Creating an skeleton.
@@ -130,8 +148,8 @@ const Scene: FC<Props> = (): JSX.Element => {
         scene.add(mococo[0].scene, brain, skeleton, ilumination, dirLight, ground);
 
         // Camera setting.
-        camera.position.set( 1, 2, -3 );
-        camera.lookAt( 0, 1, 0 );
+        camera.position.set( 0, 50, -250 );
+        camera.lookAt(brain.position);
 
         // Main animation loop.
         const animate = (): void => {
@@ -145,30 +163,67 @@ const Scene: FC<Props> = (): JSX.Element => {
             cancelAnimationFrame(animationFrameID);
             containerRef.current?.removeChild(renderer.domElement);
         }
-    }, [mococo, brain]);
+    }, [mococo, brain, fibers]);
 
     useEffect(() => {
         const handleMouseDown = (event: MouseEvent): void => {
-            setIsDragging(true);
-            setLastMousePosition({ x: event.clientX, y: event.clientY });
+            switch(event.button){
+                case 0:
+                    setIsDragging(true);
+                    setLastMousePosition({ x: event.clientX, y: event.clientY });
+                    break;
+                case 2:
+                    setIsRightDragging(true);
+                    setLastMousePosition({ x: event.clientX, y: event.clientY });
+                    console.log("CAMERA: ", camera.rotation)
+                break;
+                default:
+                    console.error("Error at handleMouseDown");
+                    break;
+            }
         };
     
         const handleMouseMove = (event: MouseEvent): void => {
-            if(!isDragging || !brain || !lastMousePosition) return;
+            if(!lastMousePosition || !brain) return;
     
             const deltaX: number = event.clientX - lastMousePosition.x;
             const deltaY: number = event.clientY - lastMousePosition.y;
-    
-            brain.rotation.z += deltaX * 0.01;
-            brain.rotation.x += deltaY * -0.01;
 
+            if(isDragging){
+                // Handle left click rotation
+                brain.rotation.z += deltaX * 0.01;
+                brain.rotation.x += deltaY * -0.01;
+            }else if(isRightDragging){
+                // Handle right click rotation
+                const rotationSpeed: number = 0.01;
+                camera.rotation.y += deltaX * rotationSpeed;
+                camera.rotation.x -= deltaY * rotationSpeed;
+
+                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2);
+                console.log("CAMERA: ", camera.rotation)
+            }
+    
             setLastMousePosition({ x: event.clientX, y: event.clientY });
         };
     
-        const handleMouseUp = (): void => {
+        const handleMouseUp = (event: MouseEvent): void => {
+            switch(event.button){
+                case 0:
+                    setIsDragging(false);
+                    break;
+                case 2:
+                    setIsRightDragging(false);
+                    break;
+                default:
+                    console.error("Error at handleMouseUp");
+                    break;
+            }
             setIsDragging(false);
             setLastMousePosition(null);
         };
+
+        // Prevent the contex menu to default open at right click
+        const handleContextMenu = (event: MouseEvent): void => event.preventDefault();
     
         // Add event listeners to the renderer's DOM element
         const rendererElement = containerRef.current?.querySelector('canvas');
@@ -176,6 +231,7 @@ const Scene: FC<Props> = (): JSX.Element => {
             rendererElement.addEventListener('mousedown', handleMouseDown);
             rendererElement.addEventListener('mousemove', handleMouseMove);
             rendererElement.addEventListener('mouseup', handleMouseUp);
+            rendererElement.addEventListener('contextmenu', handleContextMenu);
         }
     
         // Cleanup event listeners on component unmount
@@ -184,9 +240,10 @@ const Scene: FC<Props> = (): JSX.Element => {
                 rendererElement.removeEventListener('mousedown', handleMouseDown);
                 rendererElement.removeEventListener('mousemove', handleMouseMove);
                 rendererElement.removeEventListener('mouseup', handleMouseUp);
+                rendererElement.removeEventListener('contextmenu', handleContextMenu);
             }
         };
-    }, [isDragging, brain, lastMousePosition]);
+    }, [isDragging, isRightDragging, brain, lastMousePosition]);
 
     return <div ref={containerRef}/>
 }
