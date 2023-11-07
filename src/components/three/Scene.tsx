@@ -3,7 +3,6 @@ import {
     WebGLRenderer,
     Scene as SCN,
     Color,
-    Fog,
     PerspectiveCamera,
     Mesh,
     PlaneGeometry,
@@ -27,7 +26,7 @@ import type {
     DirectionalLight as DL
 } from "three";
 import type { Object } from "..\\..\\utils\\ObjectHandleler";
-import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
 import type { Fiber } from "..\\..\\utils\\serialization";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
@@ -51,7 +50,6 @@ const Scene: FC<Props> = (): JSX.Element => {
     const [brain, setBrain] = useState<Object3D | null>(null);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [lastMousePosition, setLastMousePosition] = useState<{ x: number, y: number } | null>(null);
-    const [isRightDragging, setIsRightDragging] = useState<boolean>(false);
     const [fibers, setFibers] = useState<Fiber[]>([]);
   
 // =======================<-- LOAD ASSETS -->=======================================================
@@ -75,7 +73,7 @@ const Scene: FC<Props> = (): JSX.Element => {
             setFibers(data);
         }
 
-        fetchData().catch(error => console.log(error)).finally((): void => console.log(fibers));
+        fetchData().catch(error => console.log(error));
     }, []);
 
 // ==================<-- SETUP SCENE AND RENDER LOOP -->=============================================
@@ -83,7 +81,9 @@ const Scene: FC<Props> = (): JSX.Element => {
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
-        if(!(containerRef.current && mococo && brain)) return;
+        if(!(containerRef.current && mococo && brain && fibers)) return;
+
+        console.log("FIBERS: ", fibers)
         
         let animationFrameID: number;
         
@@ -129,7 +129,7 @@ const Scene: FC<Props> = (): JSX.Element => {
 
         // Setting the models properties.
         mococo[0].scene.traverse(child => (child instanceof Mesh)? child.castShadow = true : null);
-        mococo[0].scene.scale.setScalar(4);
+        mococo[0].scene.scale.setScalar(30);
         mococo[0].scene.position.y = 1;
         mococo[0].scene.position.z = -1;
 
@@ -231,7 +231,7 @@ const Scene: FC<Props> = (): JSX.Element => {
                 rendererElement.removeEventListener('contextmenu', handleContextMenu);
             }
         };
-    }, [isDragging, isRightDragging, brain, lastMousePosition]);
+    }, [isDragging, brain, lastMousePosition]);
 
     return <div ref={containerRef}/>
 }
