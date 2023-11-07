@@ -14,6 +14,7 @@ import {
     HemisphereLight,
     DirectionalLight
 } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
 
@@ -78,7 +79,7 @@ const Scene: FC<Props> = (): JSX.Element => {
     }, []);
 
 // ==================<-- SETUP SCENE AND RENDER LOOP -->=============================================
-    const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
+    const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
@@ -89,7 +90,6 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Set Scene parameters.
         const scene: TSCN = new SCN;
         if(scene.background) scene.background = new Color(0xa0a0a0);
-        scene.fog = new Fog(0xa0a0a0, 150, 50);
         const renderer: WGLR = new WebGLRenderer({antialias: true});
         
         // Ilumination
@@ -120,6 +120,12 @@ const Scene: FC<Props> = (): JSX.Element => {
         renderer.setPixelRatio( window.devicePixelRatio );
         renderer.shadowMap.enabled = true;
         containerRef.current.appendChild(renderer.domElement);
+
+        // Creating controllers for the camera rotation
+        const controls: OrbitControls = new OrbitControls(camera, renderer.domElement);
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
 
         // Setting the models properties.
         mococo[0].scene.traverse(child => (child instanceof Mesh)? child.castShadow = true : null);
@@ -154,6 +160,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Main animation loop.
         const animate = (): void => {
             requestAnimationFrame(animate);
+            controls.update();
             mococo[0].scene.rotation.y += 0.01;
             renderer.render(scene, camera);
         }
@@ -172,11 +179,6 @@ const Scene: FC<Props> = (): JSX.Element => {
                     setIsDragging(true);
                     setLastMousePosition({ x: event.clientX, y: event.clientY });
                     break;
-                case 2:
-                    setIsRightDragging(true);
-                    setLastMousePosition({ x: event.clientX, y: event.clientY });
-                    console.log("CAMERA: ", camera.rotation)
-                break;
                 default:
                     console.error("Error at handleMouseDown");
                     break;
@@ -189,19 +191,8 @@ const Scene: FC<Props> = (): JSX.Element => {
             const deltaX: number = event.clientX - lastMousePosition.x;
             const deltaY: number = event.clientY - lastMousePosition.y;
 
-            if(isDragging){
-                // Handle left click rotation
-                brain.rotation.z += deltaX * 0.01;
-                brain.rotation.x += deltaY * -0.01;
-            }else if(isRightDragging){
-                // Handle right click rotation
-                const rotationSpeed: number = 0.01;
-                camera.rotation.y += deltaX * rotationSpeed;
-                camera.rotation.x -= deltaY * rotationSpeed;
-
-                camera.rotation.x = Math.max(Math.min(camera.rotation.x, Math.PI / 2), -Math.PI / 2);
-                console.log("CAMERA: ", camera.rotation)
-            }
+            brain.rotation.z += deltaX * 0.01;
+            brain.rotation.x += deltaY * -0.01;
     
             setLastMousePosition({ x: event.clientX, y: event.clientY });
         };
@@ -210,9 +201,6 @@ const Scene: FC<Props> = (): JSX.Element => {
             switch(event.button){
                 case 0:
                     setIsDragging(false);
-                    break;
-                case 2:
-                    setIsRightDragging(false);
                     break;
                 default:
                     console.error("Error at handleMouseUp");
