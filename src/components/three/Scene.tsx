@@ -16,11 +16,13 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
+import createLine from "./Lines";
 
 // ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
 import type { 
     Scene as TSCN,
+    Line,
     Camera,
     WebGLRenderer as WGLR,
     DirectionalLight as DL
@@ -33,7 +35,6 @@ import type { Fiber } from "..\\..\\utils\\serialization";
 import { ASSETS } from "..\\..\\utils\\resourceSrc";
 import { HENRIK } from "..\\..\\utils\\resourceSrc";
 
-
 // ======================<-- INTERFACES -->======================================================
 interface Props {
     children?: JSX.Element;
@@ -43,7 +44,6 @@ interface Props {
 const DATA_URL: string = "/Fibers.bin"; 
 
 // ==========================<-- MAIN COMPONENT -->=============================================
-
 const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [mococo, setAssets] = useState<GLTF[] | null>(null);
@@ -67,7 +67,7 @@ const Scene: FC<Props> = (): JSX.Element => {
 
 // ===========================<-- LOAD FIBERS DATA -->===============================================
     useEffect(() => {
-        const fetchData = async() => {
+        const fetchData = async(): Promise<void> => {
             const data: Fiber[] = await deserializeFiber(DATA_URL);
 
             setFibers(data);
@@ -83,8 +83,6 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Check for not null objects.
         if(!(containerRef.current && mococo && brain && fibers)) return;
 
-        console.log("FIBERS: ", fibers)
-        
         let animationFrameID: number;
         
         // Set Scene parameters.
@@ -149,9 +147,15 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Creating an skeleton.
         const skeleton: SkeletonHelper = new SkeletonHelper(mococo[0].scene);
         skeleton.visible = true;
+
+        // Create Fiber Lines
+        const lines: Line[] = fibers.map(fiber => createLine(fiber));
+
+        console.log("LINES: ", lines);
         
         // Add models to the scene.
         scene.add(mococo[0].scene, brain, skeleton, ilumination, dirLight, ground);
+        for(const line of lines) scene.add(line);
 
         // Camera setting.
         camera.position.set( 0, 50, -250 );
