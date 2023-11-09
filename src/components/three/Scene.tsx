@@ -7,6 +7,7 @@ import {
     Mesh,
     PlaneGeometry,
     Object3D,
+    Group,
     SkeletonHelper,
     MeshPhongMaterial,
     MeshStandardMaterial,
@@ -48,8 +49,6 @@ const Scene: FC<Props> = (): JSX.Element => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [mococo, setAssets] = useState<GLTF[] | null>(null);
     const [brain, setBrain] = useState<Object3D | null>(null);
-    const [isDragging, setIsDragging] = useState<boolean>(false);
-    const [lastMousePosition, setLastMousePosition] = useState<{ x: number, y: number } | null>(null);
     const [fibers, setFibers] = useState<Fiber[]>([]);
   
 // =======================<-- LOAD ASSETS -->=======================================================
@@ -136,6 +135,8 @@ const Scene: FC<Props> = (): JSX.Element => {
                 child.castShadow = true;
                 child.material = new MeshStandardMaterial({
                     color: new Color(0xB5C6DB),
+                    transparent: true,
+                    opacity: .4,
                     metalness: 1,
                     roughness: .4
                 });
@@ -151,11 +152,15 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Create Fiber Lines
         const lines: Line[] = fibers.map(fiber => createLine(fiber));
 
-        console.log("LINES: ", lines);
-        
+        // Join the Lines into one object
+        const brainFibers: Group = new Group;
+        for(const line of lines) brainFibers.add(line);
+
+        brainFibers.position.set(-125, -180, 40);
+        brainFibers.rotation.set(5, 0, 0);
+
         // Add models to the scene.
-        scene.add(mococo[0].scene, brain, skeleton, ilumination, dirLight, ground);
-        for(const line of lines) scene.add(line);
+        scene.add(mococo[0].scene, brain, brainFibers, ground, skeleton, ilumination, dirLight);
 
         // Camera setting.
         camera.position.set( 0, 50, -250 );
@@ -175,67 +180,6 @@ const Scene: FC<Props> = (): JSX.Element => {
             containerRef.current?.removeChild(renderer.domElement);
         }
     }, [mococo, brain, fibers]);
-
-    useEffect(() => {
-        const handleMouseDown = (event: MouseEvent): void => {
-            switch(event.button){
-                case 0:
-                    setIsDragging(true);
-                    setLastMousePosition({ x: event.clientX, y: event.clientY });
-                    break;
-                default:
-                    console.error("Error at handleMouseDown");
-                    break;
-            }
-        };
-    
-        const handleMouseMove = (event: MouseEvent): void => {
-            if(!lastMousePosition || !brain) return;
-    
-            const deltaX: number = event.clientX - lastMousePosition.x;
-            const deltaY: number = event.clientY - lastMousePosition.y;
-
-            brain.rotation.z += deltaX * 0.01;
-            brain.rotation.x += deltaY * -0.01;
-    
-            setLastMousePosition({ x: event.clientX, y: event.clientY });
-        };
-    
-        const handleMouseUp = (event: MouseEvent): void => {
-            switch(event.button){
-                case 0:
-                    setIsDragging(false);
-                    break;
-                default:
-                    console.error("Error at handleMouseUp");
-                    break;
-            }
-            setIsDragging(false);
-            setLastMousePosition(null);
-        };
-
-        // Prevent the contex menu to default open at right click
-        const handleContextMenu = (event: MouseEvent): void => event.preventDefault();
-    
-        // Add event listeners to the renderer's DOM element
-        const rendererElement = containerRef.current?.querySelector('canvas');
-        if (rendererElement) {
-            rendererElement.addEventListener('mousedown', handleMouseDown);
-            rendererElement.addEventListener('mousemove', handleMouseMove);
-            rendererElement.addEventListener('mouseup', handleMouseUp);
-            rendererElement.addEventListener('contextmenu', handleContextMenu);
-        }
-    
-        // Cleanup event listeners on component unmount
-        return () => {
-            if (rendererElement) {
-                rendererElement.removeEventListener('mousedown', handleMouseDown);
-                rendererElement.removeEventListener('mousemove', handleMouseMove);
-                rendererElement.removeEventListener('mouseup', handleMouseUp);
-                rendererElement.removeEventListener('contextmenu', handleContextMenu);
-            }
-        };
-    }, [isDragging, brain, lastMousePosition]);
 
     return <div ref={containerRef}/>
 }
