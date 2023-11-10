@@ -5,29 +5,19 @@ import {
     Color,
     PerspectiveCamera,
     Mesh,
-    PlaneGeometry,
     Object3D,
-    Group,
-    SkeletonHelper,
-    MeshPhongMaterial,
-    MeshStandardMaterial,
-    HemisphereLight,
-    DirectionalLight
+    Group
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
 import createLine from "./Lines";
+import { setUpBrain, setUPFibers, setUpMococo, setUpGround } from "./ModelSetup";
+import { setUpIlumination } from "./IluminationSetUp";
 
 // ======================<-- TYPE IMPORTS -->====================================================
 import type { FC } from "react";
-import type { 
-    Scene as TSCN,
-    Line,
-    Camera,
-    WebGLRenderer as WGLR,
-    DirectionalLight as DL
-} from "three";
+import type { Line, Camera} from "three";
 import type { Object } from "..\\..\\utils\\ObjectHandleler";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
 import type { Fiber } from "..\\..\\utils\\serialization";
@@ -42,7 +32,7 @@ interface Props {
 }
 
 // ==========================<-- CONSTANTS -->==================================================
-const DATA_URL: string = "/Fibers.bin"; 
+const DATA_URL: string = "/Fibers.bin";
 
 // ==========================<-- MAIN COMPONENT -->=============================================
 const Scene: FC<Props> = (): JSX.Element => {
@@ -85,32 +75,9 @@ const Scene: FC<Props> = (): JSX.Element => {
         let animationFrameID: number;
         
         // Set Scene parameters.
-        const scene: TSCN = new SCN;
+        const scene: SCN = new SCN;
         if(scene.background) scene.background = new Color(0xa0a0a0);
-        const renderer: WGLR = new WebGLRenderer({antialias: true});
-        
-        // Ilumination
-        const ilumination: HemisphereLight = new HemisphereLight(0xffffff, 0x8d8d8d, 3);
-        ilumination.position.set(0, 1000, 0);
-
-        const dirLight: DL = new DirectionalLight(0xffffff, 3);
-        dirLight.position.set(0, 50, 0);
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 150;
-        dirLight.shadow.camera.bottom = -150;
-        dirLight.shadow.camera.left = -150;
-        dirLight.shadow.camera.right = 150;
-        dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 150;
-
-        // Creating the ground.
-        const ground: Mesh = new Mesh(
-            new PlaneGeometry(4000, 4000),
-            new MeshPhongMaterial({ color: 0xcbcbcb, depthWrite: false })
-        );
-        ground.rotation.x = - Math.PI / 2;
-        ground.position.setY(-50)
-        ground.receiveShadow = true;
+        const renderer: WebGLRenderer = new WebGLRenderer({antialias: true});
 
         // Rendering config and add it to the Scene main tag.
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -123,31 +90,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         controls.rotateSpeed = 1.0;
         controls.zoomSpeed = 1.2;
         controls.panSpeed = 0.8;
-
-        // Setting the models properties.
-        mococo[0].scene.traverse(child => (child instanceof Mesh)? child.castShadow = true : null);
-        mococo[0].scene.scale.setScalar(30);
-        mococo[0].scene.position.y = 1;
-        mococo[0].scene.position.z = -1;
-
-        brain.traverse(child => {
-            if(child instanceof Mesh){
-                child.castShadow = true;
-                child.material = new MeshStandardMaterial({
-                    color: new Color(0xB5C6DB),
-                    transparent: true,
-                    opacity: .4,
-                    metalness: 1,
-                    roughness: .4
-                });
-            }
-        });
-        brain.position.set(0, 0, 0);
-        brain.rotation.set(5, 0, 0);
-
-        // Creating an skeleton.
-        const skeleton: SkeletonHelper = new SkeletonHelper(mococo[0].scene);
-        skeleton.visible = true;
+        controls.enableDamping = true;
 
         // Create Fiber Lines
         const lines: Line[] = fibers.map(fiber => createLine(fiber));
@@ -156,11 +99,19 @@ const Scene: FC<Props> = (): JSX.Element => {
         const brainFibers: Group = new Group;
         for(const line of lines) brainFibers.add(line);
 
-        brainFibers.position.set(-125, -180, 40);
-        brainFibers.rotation.set(5, 0, 0);
+        // Ilumination
+        const { hemLight, dirLight } = setUpIlumination();
+
+        // Creating the ground.
+        const ground: Mesh = setUpGround();
+
+        // Setting the models properties.
+        setUPFibers(brainFibers);
+        setUpMococo(mococo[0]);
+        setUpBrain(brain);
 
         // Add models to the scene.
-        scene.add(mococo[0].scene, brain, brainFibers, ground, skeleton, ilumination, dirLight);
+        scene.add(mococo[0].scene, brain, brainFibers, ground, hemLight, dirLight);
 
         // Camera setting.
         camera.position.set( 0, 50, -250 );
