@@ -66,7 +66,6 @@ const Scene: FC<Props> = (): JSX.Element => {
     }, []);
 
 // ==================<-- SETUP SCENE AND RENDER LOOP -->=============================================
-    const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
     useEffect(() => {
         // Initialize Scene basics.
         // Check for not null objects.
@@ -85,6 +84,9 @@ const Scene: FC<Props> = (): JSX.Element => {
         renderer.shadowMap.enabled = true;
         containerRef.current.appendChild(renderer.domElement);
 
+        // Creating Camera
+        const camera: Camera = new PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+        
         // Creating controllers for the camera rotation
         const controls: OrbitControls = new OrbitControls(camera, renderer.domElement);
         controls.rotateSpeed = 1.0;
