@@ -6,13 +6,14 @@ import {
     PerspectiveCamera,
     Mesh,
     Object3D,
+    Sphere,
     Group
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
 import createLine from "./Lines";
-import { setUpBrain, setUPFibers, setUpMococo, setUpGround } from "./ModelSetup";
+import { setUpBrain, setUPFibers, setUpMococo, setUpGround, setUpElectrodes } from "./ModelSetup";
 import { setUpIlumination } from "./IluminationSetUp";
 
 // ======================<-- TYPE IMPORTS -->====================================================
@@ -111,6 +112,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         setUPFibers(brainFibers);
         setUpMococo(mococo[0]);
         setUpBrain(brain);
+        setUpElectrodes(brain, scene);
 
         // Add models to the scene.
         scene.add(mococo[0].scene, brain, brainFibers, ground, hemLight, dirLight);
