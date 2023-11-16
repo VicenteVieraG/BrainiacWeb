@@ -112,7 +112,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         setUPFibers(brainFibers);
         setUpMococo(mococo[0]);
         setUpBrain(brain);
-        setUpElectrodes(brain, scene);
+        setUpElectrodes(scene);
 
         // Add models to the scene.
         scene.add(mococo[0].scene, brain, brainFibers, ground, hemLight, dirLight);

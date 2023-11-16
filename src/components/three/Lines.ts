@@ -13,7 +13,7 @@ const createLine = (fiber: Fiber): Line => {
     const geometry: BufferGeometry = new BufferGeometry().setFromPoints(line);
 
     // Create the line material
-    const material: LineBasicMaterial = new LineBasicMaterial({color: 0x0000ff, linewidth: 1, fog: false});
+    const material: LineBasicMaterial = new LineBasicMaterial({color: 0x0000ff, linewidth: 1, fog: false, opacity: 0.9, visible: false});
 
     // Create the Line object
     return new Line(geometry, material);
