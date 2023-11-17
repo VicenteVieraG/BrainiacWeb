@@ -5,14 +5,14 @@ import {
     Color,
     PerspectiveCamera,
     Mesh,
-    Object3D,
     Sphere,
+    Object3D,
     Group
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
-import createLine from "./Lines";
+import { createLine, getZonesLines } from "./Lines";
 import { setUpBrain, setUPFibers, setUpMococo, setUpGround, setUpElectrodes } from "./ModelSetup";
 import { setUpIlumination } from "./IluminationSetUp";
 
@@ -98,10 +98,6 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Create Fiber Lines
         const lines: Line[] = fibers.map(fiber => createLine(fiber));
 
-        // Join the Lines into one object
-        const brainFibers: Group = new Group;
-        for(const line of lines) brainFibers.add(line);
-
         // Ilumination
         const { hemLight, dirLight } = setUpIlumination();
 
@@ -109,10 +105,16 @@ const Scene: FC<Props> = (): JSX.Element => {
         const ground: Mesh = setUpGround();
 
         // Setting the models properties.
-        setUPFibers(brainFibers);
         setUpMococo(mococo[0]);
         setUpBrain(brain);
-        setUpElectrodes(scene);
+
+        const influenceZones: Sphere[] = setUpElectrodes(scene);
+        getZonesLines(lines, influenceZones);
+
+        const brainFibers: Group = new Group;
+        for(const line of lines) brainFibers.add(line);
+        
+        setUPFibers(brainFibers);
 
         // Add models to the scene.
         scene.add(mococo[0].scene, brain, brainFibers, ground, hemLight, dirLight);
