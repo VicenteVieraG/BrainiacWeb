@@ -5,6 +5,7 @@ import {
     SphereGeometry,
     Group,
     Vector3,
+    Euler,
     Points,
     PointsMaterial,
     BufferGeometry,
@@ -16,6 +17,23 @@ import {
     Color
 } from "three";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
+
+// Create the colors array for the electrodes and the influenceSpheres
+const colors: number[] = [
+    0x32a852,
+    0xa83232, // 1 Red
+    0xa2a832, // 2 Yellow
+    0x3ea832, // 3 Green
+    0xf472b6, // 4 Pink
+    0x0ea5e9, // 5 Sky
+    0x1e40af, // 6 Blue
+    0xf97316, // 7 Orange
+    0x7e22ce, // 8 Purple
+    0x64748b, // 9 Slate
+    0xfafafa, // 10 White
+    0x451a03, // 11 Brown
+    0x0a0a0a  // 12 Black
+];
 
 const setUpBrain = (object: Object3D, gap?: number): void => {
     object.traverse(child => {
@@ -31,13 +49,18 @@ const setUpBrain = (object: Object3D, gap?: number): void => {
         }
     });
     if(gap) object.position.set(gap, 0, 0);
-    object.rotation.set(5, 0, 0);
+    object.rotation.x = (3*Math.PI)/2;
 }
 
-const setInfluenceZonePosition = (zone: Group, id: number, offset: Vector3): void => {
-    const {x, y, z} = zone.children[id].position;
+const createPoints = (vertices: Vector3[], color: number = 0xfc0328): Points => {
+    const geometry: BufferGeometry = new BufferGeometry().setFromPoints(vertices);
+    const pointMaterial: PointsMaterial = new PointsMaterial({
+        color: color,
+        size: 10,
+        depthTest: false
+    });
 
-    zone.children[id].position.set(x + offset.x, y + offset.y, z + offset.z);
+    return new Points(geometry, pointMaterial);
 }
 
 const setUpElectrodes = (scene: Scene): Sphere[] => {
@@ -58,86 +81,25 @@ const setUpElectrodes = (scene: Scene): Sphere[] => {
         new Vector3(0.999390827,    0.0,            -0.034899497)
     ];
 
-    // Scale each point to fit the size of the model
+    // Scale and rotate each point to fit the size of the model
     for(const point of electrodes){
-        console.log("Original: ",point)
-        point.multiplyScalar(100);
-        console.log("ESCALADO",point)
+        point.multiplyScalar(55);
+        point.applyEuler(new Euler((3*Math.PI)/2, 0, 0));
     }
 
-    // Create the colors array for the electrodes and the influenceSpheres
-    const colors: number[] = [
-        0x32a852,
-        0xa83232, // 1 Red
-        0xa2a832, // 2 Yellow
-        0x3ea832, // 3 Green
-        0xf472b6, // 4 Pink
-        0x0ea5e9, // 5 Sky
-        0x1e40af, // 6 Blue
-        0xf97316, // 7 Orange
-        0x7e22ce, // 8 Purple
-        0x64748b, // 9 Slate
-        0xfafafa, // 10 White
-        0x451a03, // 11 Brown
-        0x0a0a0a  // 12 Black
-    ];
-
-    // Create the buffer to hold the electrodes as points and its material
-    const geometry: BufferGeometry = new BufferGeometry().setFromPoints(electrodes);
-    const pointMaterial: PointsMaterial = new PointsMaterial({
-        color: 0xfc0328,
-        size: 10,
-        depthTest: false
-    });
-
-    const points: Points = new Points(geometry, pointMaterial);
-    points.rotateX(180);
-
+    // Electrodes original position scaled by 50 and rotated 180°
+    const points: Points = createPoints(electrodes);
     scene.add(points);
 
-    // Create the influence zones of each electrode represented as Spheres
-    const influenceZonesVisualization: Mesh[] = electrodes.map((electrode, i) => {
-        const sphereGeometry: SphereGeometry = new SphereGeometry(10);
-        const meshBasicMaterial: MeshBasicMaterial = new MeshBasicMaterial({
-            color: colors[i],
-            opacity: 1,
-
-        });
-
-        const {x, y, z} = electrode;
-        const mesh: Mesh = new Mesh(sphereGeometry, meshBasicMaterial);
-        mesh.position.set(x, y, z);
-
-        return mesh;
-    });
-
-    // Group all the influence zones Visuals into a one Group
-    const influenceGroupVisual: Group = new Group;
-    for(const zone of influenceZonesVisualization) influenceGroupVisual.add(zone);
-
-    // Setup each zone into the correct place
-    influenceGroupVisual.rotateX(180);
-    setInfluenceZonePosition(influenceGroupVisual, 3, new Vector3(15, 5, 50));
-    setInfluenceZonePosition(influenceGroupVisual, 4, new Vector3(-10, 5, 50));
-    setInfluenceZonePosition(influenceGroupVisual, 5, new Vector3(15, -30, 35));
-    setInfluenceZonePosition(influenceGroupVisual, 6, new Vector3(-15, -30, 35));
-
-    scene.add(influenceGroupVisual);
-
-    // Creating the actual Spheres for calculations
-    const influenceGroup: Sphere[] = influenceGroupVisual.children.map(zone => {
-        const xd = new Sphere(zone.position, 10);
-        console.log("Zone: ", zone.position, "Sphere: ", xd.center)
-
-        return xd
-    });
-
-    return influenceGroup;
+    // Create the influence zones based on the electrodes positions
+    return electrodes.map(center => new Sphere(center, 10));
 }
 
 const setUPFibers = (fibers: Group, gap: number = 0): void => {
     fibers.position.set(-125 + gap, -180, 40);
     fibers.rotation.set(5, 0, 0);
+
+    fibers.updateMatrixWorld(true);
 }
 
 const setUpMococo = (model: GLTF): void => {
@@ -153,7 +115,7 @@ const setUpGround = (): Mesh => {
         new MeshPhongMaterial({ color: 0xcbcbcb, depthWrite: false })
     );
     ground.rotation.x = - Math.PI / 2;
-    ground.position.setY(-50);
+    ground.position.setY(-60);
     ground.receiveShadow = true;
 
     return ground;
