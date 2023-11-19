@@ -2,22 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { 
     WebGLRenderer,
     Scene as SCN,
-    Color,
     PerspectiveCamera,
     Mesh,
-    Sphere,
     Object3D,
-    Vector3,
-    Group,
-    Line,
-    LineBasicMaterial,
-    BufferGeometry
+    Sphere,
+    Color
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { loadAsset } from "..\\..\\utils\\ObjectHandleler";
 import { deserializeFiber } from "..\\..\\utils\\serialization";
-import { createLines, getZonesLines } from "./Lines";
-import { setUpBrain, setUPFibers, setUpMococo, setUpGround, setUpElectrodes } from "./ModelSetup";
+import { calculateZoneEffect, createLines, setNeonWave } from "./Lines";
+import { setUpBrain, setUpMococo, setUpGround, setUpElectrodes } from "./ModelSetup";
 import { setUpIlumination } from "./IluminationSetUp";
 
 // ======================<-- TYPE IMPORTS -->====================================================
@@ -26,7 +21,7 @@ import type { Camera } from "three";
 import type { Object } from "..\\..\\utils\\ObjectHandleler";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
 import type { Fiber } from "..\\..\\utils\\serialization";
-import type { FiberV3 } from "./Lines";
+import type { FiberZone } from "./Lines";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
 import { ASSETS } from "..\\..\\utils\\resourceSrc";
@@ -100,30 +95,6 @@ const Scene: FC<Props> = (): JSX.Element => {
         controls.panSpeed = 0.8;
         controls.enableDamping = true;
 
-        // Get the fibers in Vector3 format and add the actual visualization
-        // of the fibers on the scene
-        const fibersV3: FiberV3[] = createLines(fibers, scene);
-
-
-        // Create Fiber Lines
-        // const lines: Line[] = fibers.map(fiber => createLine(fiber));
-        // for(const line of lines){
-        //     const vertices = line.geometry.attributes.position.array;
-            
-        //     for(let i=0; i<vertices.length; i++){
-        //         const x: number = vertices[i];
-        //         const y: number = vertices[i+1];
-        //         const z: number = vertices[i+2];
-
-        //         //console.log("X:", x, "Y:", y, "Z:", z);
-        //     }
-        //     //console.log(vertices)
-        // }
-
-        // Create the lines group
-        // const brainFibers: Group = new Group;
-        // for(const line of lines) brainFibers.add(line);
-
         // Ilumination
         const { hemLight, dirLight } = setUpIlumination();
 
@@ -133,13 +104,15 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Setting the models properties.
         setUpMococo(mococo[0]);
         setUpBrain(brain);
+
+        const [fibersV3, lines] = createLines(fibers);
         const influenceZones: Sphere[] = setUpElectrodes(scene);
-        
-        //setUPFibers(brainFibers);
-        //getZonesLines(brainFibers, influenceZones);
+        const fiberZone: FiberZone[] = calculateZoneEffect(fibersV3, influenceZones);
+        setNeonWave(fiberZone, lines);
 
         // Add models to the scene.
-        scene.add(mococo[0].scene, brain, /*brainFibers,*/ ground, hemLight, dirLight);
+        scene.add(mococo[0].scene, brain, ground, hemLight, dirLight);
+        for(const line of lines) scene.add(line);
 
         // Camera setting.
         camera.position.set( 0, 50, -250 );
@@ -151,6 +124,8 @@ const Scene: FC<Props> = (): JSX.Element => {
             controls.update();
             mococo[0].scene.rotation.y += 0.01;
             renderer.render(scene, camera);
+
+
         }
         animate();
 

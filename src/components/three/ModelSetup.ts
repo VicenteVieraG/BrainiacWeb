@@ -2,8 +2,6 @@ import {
     Scene,
     Object3D,
     Sphere,
-    SphereGeometry,
-    Group,
     Vector3,
     Euler,
     Points,
@@ -11,29 +9,11 @@ import {
     BufferGeometry,
     PlaneGeometry,
     Mesh,
-    MeshBasicMaterial,
     MeshStandardMaterial,
     MeshPhongMaterial,
     Color
 } from "three";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
-
-// Create the colors array for the electrodes and the influenceSpheres
-const colors: number[] = [
-    0x32a852,
-    0xa83232, // 1 Red
-    0xa2a832, // 2 Yellow
-    0x3ea832, // 3 Green
-    0xf472b6, // 4 Pink
-    0x0ea5e9, // 5 Sky
-    0x1e40af, // 6 Blue
-    0xf97316, // 7 Orange
-    0x7e22ce, // 8 Purple
-    0x64748b, // 9 Slate
-    0xfafafa, // 10 White
-    0x451a03, // 11 Brown
-    0x0a0a0a  // 12 Black
-];
 
 const setUpBrain = (object: Object3D, gap?: number): void => {
     object.traverse(child => {
@@ -95,13 +75,6 @@ const setUpElectrodes = (scene: Scene): Sphere[] => {
     return electrodes.map(center => new Sphere(center, 10));
 }
 
-const setUPFibers = (fibers: Group, gap: number = 0): void => {
-    fibers.position.set(-125 + gap, -180, 40);
-    fibers.rotation.set(5, 0, 0);
-
-    fibers.updateMatrixWorld(true);
-}
-
 const setUpMococo = (model: GLTF): void => {
     model.scene.traverse(child => (child instanceof Mesh)? child.castShadow = true : null);
     model.scene.position.y = 1;
@@ -121,4 +94,4 @@ const setUpGround = (): Mesh => {
     return ground;
 }
 
-export { setUpBrain, setUpElectrodes, setUPFibers, setUpMococo, setUpGround };
+export { setUpBrain, setUpElectrodes, setUpMococo, setUpGround };
