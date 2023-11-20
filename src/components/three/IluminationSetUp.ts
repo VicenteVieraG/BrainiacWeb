@@ -16,9 +16,9 @@ export const setUpIlumination = (): Light => {
     ilumination.dirLight.position.set(0, 50, 0);
     ilumination.dirLight.castShadow = true;
     ilumination.dirLight.shadow.camera.top = 150;
-    ilumination.dirLight.shadow.camera.bottom = -150;
-    ilumination.dirLight.shadow.camera.left = -150;
-    ilumination.dirLight.shadow.camera.right = 150;
+    ilumination.dirLight.shadow.camera.bottom = -500;
+    ilumination.dirLight.shadow.camera.left = -1000;
+    ilumination.dirLight.shadow.camera.right = 500;
     ilumination.dirLight.shadow.camera.near = 0.1;
     ilumination.dirLight.shadow.camera.far = 150;
 

@@ -21,8 +21,8 @@ export interface FiberZone {
 
 // Create the colors array for the electrodes and the influenceSpheres
 const colors: number[] = [
-    0x32a852,
-    0xa83232, // 1 Red
+    0x32a852, // 0 Skin
+    0x030712, // 1 Black
     0xa2a832, // 2 Yellow
     0x3ea832, // 3 Green
     0xf472b6, // 4 Pink
@@ -30,13 +30,16 @@ const colors: number[] = [
     0x1e40af, // 6 Blue
     0xf97316, // 7 Orange
     0x7e22ce, // 8 Purple
-    0x64748b, // 9 Slate
-    0xfafafa, // 10 White
+    0xa21caf, // 9 Fusha
+    0x34d399, // 10 emerald
     0x451a03, // 11 Brown
-    0x0a0a0a  // 12 Black
+    0xdc2626, // 12 Red
+    0xb45309, // 13 Amber
+    0xa3e635, // 14 Lime
+    0x4f46e5  // 15 Indigo
 ];
 
-const createLines = (fibers: Fiber[]): [FiberV3[], Line[]] => {
+const createLines = (fibers: Fiber[], number: number, gap: number): [FiberV3[][], Line[][]] => {
     // Extract the fiber´s goemtry into FiberV3
     const fibersV3: FiberV3[] = [];
 
@@ -50,79 +53,114 @@ const createLines = (fibers: Fiber[]): [FiberV3[], Line[]] => {
         fibersV3.push(fiberV3);
     }
 
+    // Create the fibersV3 copies
+    const fibersV3Total: FiberV3[][] = [];
+    for(let i = 0; i < number; i++){
+        const fibersV3Copies: FiberV3[] = [];
+
+        for(const fiberV3 of fibersV3){
+            const fiberV3Copy: FiberV3 = [];
+            for(const vertex of fiberV3){
+                fiberV3Copy.push(vertex.clone());
+            }
+            fibersV3Copies.push(fiberV3Copy);
+        }
+
+        fibersV3Total.push(fibersV3Copies);
+    }
+
     // SetUp the vertices position
-    for(const fiberV3 of fibersV3){
-        for(const vector of fiberV3){
-            vector.applyEuler(new Euler((3*Math.PI)/2));
-            vector.add(new Vector3(-130, -160, 90));
+    for(let i = 0; i < fibersV3Total.length; i++){
+        for(const fiberV3 of fibersV3Total[i]){
+            for(const vector of fiberV3){
+                vector.applyEuler(new Euler((3*Math.PI)/2));
+                vector.add(new Vector3(-i * gap - 130, -160, 90));
+            }
         }
     }
 
     // Create the actual vizualization of the fibers based on their gometry
-    const lines: Line[] = fibersV3.map(fiberV3 => {
-        const geometry: BufferGeometry = new BufferGeometry().setFromPoints(fiberV3);
-        const lineMaterial: LineBasicMaterial = new LineBasicMaterial({
-            color: 0x5b21b6,
-            opacity: 0.9,
-            transparent: true,
-            visible: true
-        });
+    const totalLines: Line[][] = [];
+    for(const fiberV3Array of fibersV3Total){
+        const lines: Line[] = [];
+        for(const fiberV3 of fiberV3Array){
+            const geometry: BufferGeometry = new BufferGeometry().setFromPoints(fiberV3);
+            const lineMaterial: LineBasicMaterial = new LineBasicMaterial({
+                color: 0xa1a1aa,
+                opacity: 0.3,
+                transparent: true,
+                visible: true
+            });
 
-        return new Line(geometry, lineMaterial);
-    });
+            lines.push(new Line(geometry, lineMaterial));
+        }
+        totalLines.push(lines);
+    }
 
-    return [fibersV3, lines];
+    return [fibersV3Total, totalLines];
 }
 
-const calculateZoneEffect = (fibersV3: FiberV3[], influenceZones: Sphere[]): FiberZone[] => {
+const calculateZoneEffect = (fibersV3Array: FiberV3[][], influenceZonesArray: Sphere[][]): FiberZone[][] => {
     // Array containing wich fibers are inside the influence zones
-    const fibersZones: FiberZone[] = [];
+    const fibersZones: FiberZone[][] = [];
 
-    for(let i=0; i<influenceZones.length; i++){
-        for(let j=0; j<fibersV3.length; j++){
-            for(const vertex of fibersV3[j]){
-                if(influenceZones[i].containsPoint(vertex)){
-                    fibersZones.push({fiber: j, zone: i});
-                    break;
+    for(let i = 0; i < influenceZonesArray.length; i++){
+        const fiberZone: FiberZone[] = [];
+        for(let j = 0; j < influenceZonesArray[i].length; j++){
+            for(let k = 0; k < fibersV3Array[i].length; k++){
+                for(let l = 0; l < fibersV3Array[i][k].length; l++){
+                    if(influenceZonesArray[i][j].containsPoint(fibersV3Array[i][k][l])){
+                        fiberZone.push({fiber: k, zone: j});
+                        break;
+                    }
                 }
             }
         }
+        fibersZones.push(fiberZone);
     }
 
     return fibersZones;
 }
 
-const setNeonWave = (fiberZones: FiberZone[], lines: Line[]): void => {
-    for(const fiberZone of fiberZones){
-        // Defining the wave-neon shader material
-        const { fiber, zone } = fiberZone;
+const setNeonWave = (modelFiberZoneMap: FiberZone[][], modelsLines: Line[][]): void => {
+    let currentModel: number = 0;
+    console.log(modelsLines)
+    for(const fiberZoneMap of modelFiberZoneMap){
+        for(const map of fiberZoneMap){
+            // Defining the wave-neon shader material
+            const { fiber, zone } = map;
 
-        // Convert colors from hexadecimal to RGBA
-        const r: number = ((colors[zone] >> 16) & 0xFF)/255;
-        const g: number = ((colors[zone] >> 8) & 0xFF)/255;
-        const b: number = (colors[zone] & 0xFF)/255;
+            // Convert colors from hexadecimal to RGBA
+            const r: number = ((colors[zone] >> 16) & 0xFF)/255;
+            const g: number = ((colors[zone] >> 8) & 0xFF)/255;
+            const b: number = (colors[zone] & 0xFF)/255;
 
-        // fragmentShader.glsl
-        const fragmentShader: string = `
-            void main() {
-                gl_FragColor = vec4(${r}, ${g}, ${b}, 1.0);
-            }
-        `;
+            // fragmentShader.glsl
+            const fragmentShader: string = `
+                uniform float time;
+                uniform float amplitude;
+                uniform float wavelength;
 
-        const uniform = {
-            time: { value: 1.0 },
-            amplitude: { value: 1.0 },
-            wavelength: { value: 20.0 },
-            lineColor: { value: new Color(colors[zone]) }
+                void main() {
+                    gl_FragColor = vec4(${r}, ${g}, ${b}, 1.0);
+                    // Include your wave effect here using the 'time' uniform
+                }
+            `;
+
+            const shaderMaterial: ShaderMaterial = new ShaderMaterial({
+                uniforms: {
+                    time: { value: 0.1 },
+                    amplitude: { value: 1.0 },
+                    wavelength: { value: 20.0 },
+                    lineColor: { value: new Color(colors[zone]) }
+                },
+                fragmentShader: fragmentShader,
+                vertexShader: vertexShader,
+                visible: true
+            });
+            modelsLines[currentModel][fiber].material = shaderMaterial;
         }
-        const shaderMaterial: ShaderMaterial = new ShaderMaterial({
-            uniforms: uniform,
-            fragmentShader: fragmentShader,
-            vertexShader: vertexShader,
-            visible: true
-        });
-
-        lines[fiber].material = shaderMaterial;
+        currentModel++;
     }
 }
 
