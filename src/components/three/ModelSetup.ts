@@ -15,43 +15,25 @@ import {
 } from "three";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
 
-// Map with Electrode-Position
-const electrodes: Map<string, number[]> = new Map();
-    electrodes.set("C5", [11, 5]);
-    electrodes.set("C6", [12, 9]);
-    electrodes.set("CP3",[6, 7]);
-    electrodes.set("CP4",[3, 7]);
-    electrodes.set("F5", [9, 3]);
-    electrodes.set("F6", [8, 1]);
-    electrodes.set("FC3",[9, 6]);
-    electrodes.set("FC4",[9, 6]);
-    electrodes.set("FC5",[9, 5]);
-    electrodes.set("FC6",[9, 5]);
-    electrodes.set("FCz",[9, 5]);
-    electrodes.set("P5", [1, 4]);
-    electrodes.set("P6", [1, 5]);
-    electrodes.set("Pz", [2, 6]);
-    electrodes.set("T7", [8, 2]);
-    electrodes.set("T8", [4, 2]);
-
 // Electrode-Connectivity Map
-const connectivity: Map<string, number> = new Map();
-    connectivity.set("C5", 0);
-    connectivity.set("C6", 1);
-    connectivity.set("CP3", 2);
-    connectivity.set("CP4", 3);
-    connectivity.set("F5", 4);
-    connectivity.set("F6", 5);
-    connectivity.set("FC3", 6);
-    connectivity.set("FC4", 7);
-    connectivity.set("FC5", 8);
-    connectivity.set("FC6", 9);
-    connectivity.set("FCz", 10);
-    connectivity.set("P5", 11);
-    connectivity.set("P6", 12);
-    connectivity.set("Pz", 13);
-    connectivity.set("T7", 14);
-    connectivity.set("T8", 15);
+const connectivity: Map<number, number[]> = new Map();
+    connectivity.set(0,     [11, 5]);
+    connectivity.set(1,     [12, 9]);
+    connectivity.set(2,     [6, 7]);
+    connectivity.set(3,     [3, 7]);
+    connectivity.set(4,     [9, 3]);
+    connectivity.set(5,     [8, 1]);
+    connectivity.set(6,     [9, 6]);
+    connectivity.set(7,     [9, 6]);
+    connectivity.set(8,     [9, 5]);
+    connectivity.set(9,     [9, 5]);
+    connectivity.set(10,    [9, 5]);
+    connectivity.set(11,    [1, 4]);
+    connectivity.set(12,    [1, 5]);
+    connectivity.set(13,    [2, 6]);
+    connectivity.set(14,    [8, 2]);
+    connectivity.set(15,    [4, 2]);
+
 
 const setUpBrain = (brain: Object3D, number: number, gap: number): Object3D[] => {
     const brains: Object3D[] = [];
@@ -69,7 +51,7 @@ const setUpBrain = (brain: Object3D, number: number, gap: number): Object3D[] =>
                 child.material = new MeshStandardMaterial({
                     color: new Color(0xB5C6DB),
                     transparent: true,
-                    opacity: .3,
+                    opacity: .2,
                     metalness: 1,
                     roughness: .4
                 });
@@ -138,13 +120,20 @@ const setUpElectrodes = (scene: Scene, number: number, gap: number): Sphere[][] 
     // connectivity
     const influenceZonesArray: Sphere[][] = [];
 
-    for(const electrodeArray of electrodesArray){
-        const influenceZones: Sphere[] = [];
-        for(const center of electrodeArray){
-            influenceZones.push(new Sphere(center, 10));
+    for(let i = 0; i < number; i++){
+        const modelsInfluenceZones: Sphere[] = [];
+        for(let j = 0; j < electrodesArray[i].length; j++){
+            const connections: number[] = connectivity.get(j) as number[];
+
+            modelsInfluenceZones.push(
+                new Sphere(electrodesArray[i][j],
+                    connections[i]
+                )
+            );
         }
-        influenceZonesArray.push(influenceZones);
+        influenceZonesArray.push(modelsInfluenceZones);
     }
+
     return influenceZonesArray;
 }
 

@@ -21,7 +21,7 @@ import type { Camera } from "three";
 import type { Object } from "..\\..\\utils\\ObjectHandleler";
 import type { GLTF } from "three\\examples\\jsm\\loaders\\GLTFLoader.js";
 import type { Fiber } from "..\\..\\utils\\serialization";
-import type { FiberZone, FiberV3 } from "./Lines";
+import type { FiberZone } from "./Lines";
 
 // ======================<-- VARIABLES IMPORT -->==========================================
 import { ASSETS } from "..\\..\\utils\\resourceSrc";
@@ -101,7 +101,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         // Creating the ground.
         const ground: Mesh = setUpGround();
 
-        const objectNum: number = 6;
+        const objectNum: number = 2;
         const gap: number = 150;
 
         // Setting the models properties.
@@ -119,7 +119,7 @@ const Scene: FC<Props> = (): JSX.Element => {
         setNeonWave(modelsEffectZones, linesArray);
 
         // Add models to the scene.
-        scene.add(mococo[0].scene, ground, hemLight, dirLight);
+        scene.add(mococo[0].scene, hemLight, dirLight);
 
         // Camera setting.
         camera.position.set( 0, 50, -250 );
